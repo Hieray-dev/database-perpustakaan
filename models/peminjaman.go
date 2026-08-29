@@ -1,0 +1,21 @@
+package models
+
+type Riwayat struct {
+	IDPeminjaman  int    `json:"id_peminjaman"`
+	KodeTransaksi string `json:"kode_transaksi"`
+	JudulBuku     string `json:"judul_buku"`
+	TanggalPinjam string `json:"tanggal_peminjaman"`
+	Status        string `json:"status"`
+	Pustakawan    string `json:"pustakawan"`
+	StatusPetugas string `json:"status_petugas"`
+}
+
+type BookingRequest struct {
+	IDUser int `json:"id_user"`
+	IDBuku int `json:"id_buku"`
+}
+
+type ConfirmPinjamRequest struct {
+	IDPeminjaman int `json:"id_peminjaman"`
+	IDPetugas    int `json:"id_petugas"`
+}

@@ -1,11 +1,11 @@
 package models
 
 type User struct {
-	ID       int    `json:"id_user"`
+	IDUser   int    `json:"id_user"`
 	Username string `json:"username"`
-	Password string `json:"password"`
+	Password string `json:"password,omitempty"`
 	IDRole   int    `json:"id_role"`
-	IDShift  *int   `json:"id_shift"`
+	IDShift  *int   `json:"id_shift,omitempty"`
 	IsActive int    `json:"is_active"`
 }
 
@@ -23,11 +23,4 @@ type LoginShiftResponse struct {
 	JamMasukShift   string `json:"jam_masuk_shift"`
 	JamLogin        string `json:"jam_login"`
 	StatusKehadiran string `json:"status_kehadiran"`
-}
-
-type Riwayat struct {
-	IDPeminjaman  int    `json:"id_peminjaman"`
-	Pustakawan    string `json:"pustakawan"`
-	StatusPetugas string `json:"status_petugas"`
-	TanggalPinjam string `json:"tanggal_pinjam"`
 }

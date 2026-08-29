@@ -1,18 +1,26 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"perpustakaan-api/config"
-	"perpustakaan-api/controllers"
+	"perpustakaan-api/routes"
 )
 
 func main() {
 	config.ConnectDB()
 
-	http.HandleFunc("/register", controllers.RegisterHandler)
-	http.HandleFunc("/login", controllers.LoginHandler)
+	appRoutes := routes.SetupRoutes()
 
-	http.HandleFunc("/peminjaman/riwayat", controllers.GetRiwayatHandler)
+	port := os.Getenv("SERVER_PORT")
+	if port == "" {
+		port = ":8080"
+	}
 
-	http.ListenAndServe(":8080", nil)
+	fmt.Println("Server running on port :8080...")
+	err := http.ListenAndServe(":8080", appRoutes)
+	if err != nil {
+		fmt.Println("Gagal menjalankan server:", err)
+	}
 }

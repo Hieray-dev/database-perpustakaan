@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"perpustakaan-api/config"
 	"perpustakaan-api/models"
+	"perpustakaan-api/utils"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -27,14 +28,8 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		u.IDRole = 3
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
-	if err != nil {
-		http.Error(w, "Gagal enkripsi password", http.StatusInternalServerError)
-		return
-	}
-
 	query := "INSERT INTO user (username, password, id_role, id_shift, is_active) VALUES (?, ?, ?, ?, 1)"
-	_, err = config.DB.Exec(query, u.Username, string(hashedPassword), u.IDRole, u.IDShift)
+	_, err = config.DB.Exec(query, u.Username, u.Password, u.IDRole, u.IDShift)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -74,7 +69,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		WHERE u.username = ?`
 
 	err = config.DB.QueryRow(query, req.Username).Scan(
-		&dbUser.ID, &dbUser.Username, &dbUser.Password, &dbUser.IDRole, &dbUser.IsActive,
+		&dbUser.IDUser, &dbUser.Username, &dbUser.Password, &dbUser.IDRole, &dbUser.IsActive,
 		&namaShift, &jamMasuk, &jamKeluar,
 	)
 	if err != nil {
@@ -87,8 +82,16 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(req.Password))
-	if err != nil {
+	passwordValid := (dbUser.Password == req.Password)
+
+	if !passwordValid {
+		errBcrypt := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(req.Password))
+		if errBcrypt == nil {
+			passwordValid = true
+		}
+	}
+
+	if !passwordValid {
 		http.Error(w, "Password salah!", http.StatusUnauthorized)
 		return
 	}
@@ -97,7 +100,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	jamLoginStr := waktuSekarang.Format("15:04:05")
 	tanggalHariIni := waktuSekarang.Format("2006-01-02")
 
-	statusKehadiran := "Tepat Waktu"
+	statusKehadiran := "Tidak Ada Absensi"
 
 	if namaShift != "Tidak Ada Shift" {
 		tLogin, _ := time.Parse("15:04:05", jamLoginStr)
@@ -108,16 +111,25 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 		if detikLogin > detikMasuk {
 			statusKehadiran = "Terlambat"
+		} else {
+			statusKehadiran = "Tepat Waktu"
 		}
 
-		queryAbsensi := "INSERT INTO absensi (id_user, tanggal, status) VALUES (?, ?)"
-		config.DB.Exec(queryAbsensi, dbUser.ID, tanggalHariIni, statusKehadiran)
+		queryAbsensi := "INSERT INTO absensi (id_user, tanggal, status) VALUES (?, ?, ?)"
+		config.DB.Exec(queryAbsensi, dbUser.IDUser, tanggalHariIni, statusKehadiran)
+	}
+
+	token, err := utils.GenerateToken(dbUser.IDUser, dbUser.Username, dbUser.IDRole)
+	if err != nil {
+		http.Error(w, "Gagal membuat token", http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message":          "Login & Absensi Berhasil",
-		"id_user":          dbUser.ID,
+		"message":          "Login berhasil",
+		"token":            token,
+		"id_user":          dbUser.IDUser,
 		"username":         dbUser.Username,
 		"id_role":          dbUser.IDRole,
 		"nama_shift":       namaShift,
