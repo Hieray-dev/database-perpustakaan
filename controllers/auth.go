@@ -28,8 +28,14 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		u.IDRole = 3
 	}
 
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "Gagal memproses enkripsi password", http.StatusInternalServerError)
+		return
+	}
+
 	query := "INSERT INTO user (username, password, id_role, id_shift, is_active) VALUES (?, ?, ?, ?, 1)"
-	_, err = config.DB.Exec(query, u.Username, u.Password, u.IDRole, u.IDShift)
+	_, err = config.DB.Exec(query, u.Username, string(hashedPassword), u.IDRole, u.IDShift)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

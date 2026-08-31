@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"perpustakaan-api/config"
 	"perpustakaan-api/routes"
 )
@@ -15,11 +16,15 @@ func main() {
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
-		port = ":8080"
+		port = "8080"
 	}
 
-	fmt.Println("Server running on port :8080...")
-	err := http.ListenAndServe(":8080", appRoutes)
+	if !strings.HasPrefix(port, ":") {
+		port = ":" + port
+	}
+
+	fmt.Printf("Server running on port %s...\n", port)
+	err := http.ListenAndServe(port, appRoutes)
 	if err != nil {
 		fmt.Println("Gagal menjalankan server:", err)
 	}
