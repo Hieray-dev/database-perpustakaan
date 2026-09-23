@@ -40,9 +40,11 @@ func main() {
 		port = ":" + port
 	}
 
-	fmt.Printf("Server running on port %s...\n", port)
+	address := "0.0.0.0" + port
+
+	fmt.Printf("Server running on http://%s...\n", address)
 	
-	err := http.ListenAndServe(port, handlerWithCORS)
+	err := http.ListenAndServe(address, handlerWithCORS)
 	if err != nil {
 		fmt.Println("Gagal menjalankan server:", err)
 	}
